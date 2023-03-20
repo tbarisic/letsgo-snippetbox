@@ -5,15 +5,17 @@ import (
 	"flag"
 	_ "github.com/lib/pq"
 	"github.com/tbarisic/letsgo-snippetbox/internal/models"
+	"html/template"
 	"log"
 	"net/http"
 	"os"
 )
 
 type application struct {
-	errorLog *log.Logger
-	infoLog  *log.Logger
-	snippets *models.SnippetModel
+	errorLog      *log.Logger
+	infoLog       *log.Logger
+	snippets      *models.SnippetModel
+	templateCache map[string]*template.Template
 }
 
 func openDB(dsn string) (*sql.DB, error) {
@@ -47,10 +49,17 @@ func main() {
 
 	defer db.Close()
 
+	cache, err := newTemplateCache()
+
+	if err != nil {
+		errorLog.Fatal(err)
+	}
+
 	app := &application{
-		errorLog: errorLog,
-		infoLog:  infoLog,
-		snippets: &models.SnippetModel{DB: db, LOG: infoLog},
+		errorLog:      errorLog,
+		infoLog:       infoLog,
+		snippets:      &models.SnippetModel{DB: db, LOG: infoLog},
+		templateCache: cache,
 	}
 
 	server := &http.Server{
