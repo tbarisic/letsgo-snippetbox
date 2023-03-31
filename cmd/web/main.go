@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"flag"
+	"github.com/go-playground/form/v4"
 	_ "github.com/lib/pq"
 	"github.com/tbarisic/letsgo-snippetbox/internal/models"
 	"html/template"
@@ -16,6 +17,7 @@ type application struct {
 	infoLog       *log.Logger
 	snippets      *models.SnippetModel
 	templateCache map[string]*template.Template
+	formDecoder   *form.Decoder
 }
 
 func openDB(dsn string) (*sql.DB, error) {
@@ -33,7 +35,7 @@ func main() {
 
 	address := flag.String("address", ":1337", "HTTP network address")
 
-	dsn := flag.String("dsn", "postgres://snippetbox:test@localhost:5433/snippetbox?sslmode=disable", "Postgresql data source name")
+	dsn := flag.String("dsn", "postgres://placeholder:placeholder@localhost:5432/placeholder?sslmode=disable", "Postgresql data source name")
 
 	flag.Parse()
 
@@ -55,11 +57,14 @@ func main() {
 		errorLog.Fatal(err)
 	}
 
+	formDecoder := form.NewDecoder()
+
 	app := &application{
 		errorLog:      errorLog,
 		infoLog:       infoLog,
 		snippets:      &models.SnippetModel{DB: db, LOG: infoLog},
 		templateCache: cache,
+		formDecoder:   formDecoder,
 	}
 
 	server := &http.Server{
